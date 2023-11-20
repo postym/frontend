@@ -1,3 +1,26 @@
+// Get Users for Selection
+getUsersSelection();
+
+async function getUsersSelection() {
+  const response = await fetch("http://backend.test/api/user/selection", {
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  if (response.ok) {
+    const json = await response.json();
+
+    let container = '<option value="">Select User</option>';
+    json.forEach((element) => {
+      container += `<option value="${element.id}">${element.name}</option>`;
+    });
+
+    document.querySelector('#message_form select[name="user_id"]').innerHTML =
+      container;
+  }
+}
+
 // Get All Messages
 getMessages();
 
@@ -18,8 +41,8 @@ async function getMessages(keyword = "") {
     json.forEach((element) => {
       const date = new Date(element.created_at).toLocaleString();
 
-      container += `<div class="col-sm-12 mb-3">
-                    <div class="card w-100" data-id="${element.message_id}">
+      container += `<div class="col-sm-12">
+                    <div class="card w-100 mt-3" data-id="${element.message_id}">
                       <div class="card-body">
                         <div class="dropdown float-end">
                           <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
@@ -76,13 +99,19 @@ message_form.onsubmit = async (e) => {
 
   const formData = new FormData(message_form);
 
-  const response = await fetch("http://backend.test/api/message", {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-    },
-    body: formData,
-  });
+  const id = document.querySelector('#message_form input[type="hidden"]').value;
+  const forUpdate = id.length > 0 ? true : false;
+
+  const response = await fetch(
+    "http://backend.test/api/message" + (forUpdate ? "/" + id : ""),
+    {
+      method: forUpdate ? "PUT" : "POST",
+      headers: {
+        Accept: "application/json",
+      },
+      body: forUpdate ? new URLSearchParams(formData) : formData,
+    }
+  );
 
   if (response.ok) {
     const json = await response.json();
@@ -97,6 +126,7 @@ message_form.onsubmit = async (e) => {
   }
 
   document.querySelector("#message_form button").disabled = false;
+  document.querySelector("#message_form button").innerHTML = "Submit";
 };
 
 // Delete Message
@@ -149,7 +179,7 @@ const showMessage = async (id) => {
 
     document.querySelector('#message_form input[type="hidden"]').value =
       json.message_id;
-    document.querySelector('#message_form input[name="user_id"]').value =
+    document.querySelector('#message_form select[name="user_id"]').value =
       json.user_id;
     document.querySelector('#message_form textarea[name="message"]').value =
       json.message;

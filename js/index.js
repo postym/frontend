@@ -1,15 +1,18 @@
 // Get All Messages
 getMessages();
 
-async function getMessages() {
-  let response = await fetch("http://backend.test/api/message", {
-    headers: {
-      Accept: "application/json",
-    },
-  });
+async function getMessages(keyword = "") {
+  const response = await fetch(
+    "http://backend.test/api/message?keyword=" + keyword,
+    {
+      headers: {
+        Accept: "application/json",
+      },
+    }
+  );
 
   if (response.ok) {
-    let json = await response.json();
+    const json = await response.json();
 
     let container = "";
     json.forEach((element) => {
@@ -43,4 +46,49 @@ async function getMessages() {
   } else {
     alert("HTTP-Error: " + response.status);
   }
+}
+
+// Search Form
+const message_search_form = document.getElementById("message_search_form");
+message_search_form.onsubmit = async (e) => {
+  e.preventDefault();
+
+  const formData = new FormData(message_search_form);
+  const keyword = formData.get("keyword");
+
+  getMessages(keyword);
+};
+
+// Create Message
+const message_form = document.getElementById("message_form");
+message_form.onsubmit = submitMessage;
+
+async function submitMessage(e) {
+  e.preventDefault();
+
+  document.querySelector("#message_form button").disabled = true;
+
+  const formData = new FormData(message_form);
+
+  const response = await fetch("http://backend.test/api/message", {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+    },
+    body: formData,
+  });
+
+  if (response.ok) {
+    const json = await response.json();
+    console.log(json);
+
+    message_form.reset();
+    getMessages();
+  } else if (response.status == 422) {
+    const json = await response.json();
+
+    alert(json.message);
+  }
+
+  document.querySelector("#message_form button").disabled = false;
 }

@@ -1,6 +1,5 @@
 // Get Users for Selection
 getUsersSelection();
-
 async function getUsersSelection() {
   const response = await fetch("http://backend.test/api/user/selection", {
     headers: {
@@ -23,7 +22,6 @@ async function getUsersSelection() {
 
 // Get All Messages
 getMessages();
-
 async function getMessages(keyword = "") {
   const response = await fetch(
     "http://backend.test/api/message?keyword=" + keyword,

@@ -19,16 +19,16 @@ async function getMessages(keyword = "") {
       const date = new Date(element.created_at).toLocaleString();
 
       container += `<div class="col-sm-12 mb-3">
-                    <div class="card w-100">
+                    <div class="card w-100" data-id="${element.message_id}">
                       <div class="card-body">
                         <div class="dropdown float-end">
                           <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"></button>
                           <ul class="dropdown-menu">
                             <li>
-                              <a class="dropdown-item" href="#" id="btn_edit">Edit</a>
+                              <a class="dropdown-item" href="#" id="btn_edit" data-id="${element.message_id}">Edit</a>
                             </li>
                             <li>
-                              <a class="dropdown-item" href="#" id="btn_delete">Delete</a>
+                              <a class="dropdown-item" href="#" id="btn_delete" data-id="${element.message_id}">Delete</a>
                             </li>
                           </ul>
                         </div>
@@ -43,6 +43,14 @@ async function getMessages(keyword = "") {
     });
 
     document.getElementById("get_messages").innerHTML = container;
+
+    document.querySelectorAll("#btn_edit").forEach((element) => {
+      element.addEventListener("click", editAction);
+    });
+
+    document.querySelectorAll("#btn_delete").forEach((element) => {
+      element.addEventListener("click", deleteAction);
+    });
   } else {
     alert("HTTP-Error: " + response.status);
   }
@@ -59,11 +67,9 @@ message_search_form.onsubmit = async (e) => {
   getMessages(keyword);
 };
 
-// Create Message
+// Create/Update Message
 const message_form = document.getElementById("message_form");
-message_form.onsubmit = submitMessage;
-
-async function submitMessage(e) {
+message_form.onsubmit = async (e) => {
   e.preventDefault();
 
   document.querySelector("#message_form button").disabled = true;
@@ -91,4 +97,64 @@ async function submitMessage(e) {
   }
 
   document.querySelector("#message_form button").disabled = false;
-}
+};
+
+// Delete Message
+const deleteAction = async (e) => {
+  if (confirm("Are you sure you want to delete")) {
+    const id = e.target.getAttribute("data-id");
+
+    document.querySelector(`.card[data-id="${id}"]`).style.backgroundColor =
+      "red";
+
+    const response = await fetch("http://backend.test/api/message/" + id, {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    if (response.ok) {
+      const json = await response.json();
+      console.log(json);
+
+      document.querySelector(`.card[data-id="${id}"]`).remove();
+      // getMessages();
+    } else {
+      alert("Unable to delete!");
+    }
+  }
+};
+
+// Update Message
+const editAction = async (e) => {
+  const id = e.target.getAttribute("data-id");
+
+  showMessage(id);
+};
+
+// Show Message
+const showMessage = async (id) => {
+  document.querySelector(`.card[data-id="${id}"]`).style.backgroundColor =
+    "yellow";
+
+  const response = await fetch("http://backend.test/api/message/" + id, {
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  if (response.ok) {
+    const json = await response.json();
+
+    document.querySelector('#message_form input[type="hidden"]').value =
+      json.message_id;
+    document.querySelector('#message_form input[name="user_id"]').value =
+      json.user_id;
+    document.querySelector('#message_form textarea[name="message"]').value =
+      json.message;
+    document.querySelector("#message_form button").innerHTML = "Update";
+  } else {
+    alert("Unable to show!");
+  }
+};
